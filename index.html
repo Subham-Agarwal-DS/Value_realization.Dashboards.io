@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Value Realization Dashboard — Marvel LLC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <style>
+    :root {
+      --bg0: #0b0614;
+      --bg1: #120824;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.085);
+      --stroke: rgba(255,255,255,0.10);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --muted2: rgba(255,255,255,0.55);
+      --purple: #a855f7;
+      --pink: #ec4899;
+      --good: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(168,85,247,0.25), transparent 60%),
+        radial-gradient(900px 500px at 90% 20%, rgba(236,72,153,0.16), transparent 55%),
+        radial-gradient(900px 500px at 50% 100%, rgba(124,58,237,0.18), transparent 65%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px 18px 40px; }
+
+    /* Ribbon */
+    .ribbon {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      margin: 0 auto 18px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.30);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ribbonLeft {
+      display:flex; align-items:center; gap: 10px; flex-wrap: wrap;
+      min-width: 260px;
+    }
+    .ribbonBrand {
+      display:flex; align-items:center; gap: 10px;
+      padding: 6px 10px;
+      border-radius: 14px;
+      background: rgba(168,85,247,0.10);
+      border: 1px solid rgba(168,85,247,0.18);
+      color: rgba(255,255,255,0.86);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .tabs {
+      display:flex; align-items:center; gap: 8px; flex-wrap: wrap;
+    }
+    .tabBtn {
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.78);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform .06s ease, background .15s ease, color .15s ease;
+      user-select: none;
+    }
+    .tabBtn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.90);
+    }
+    .tabBtn.active {
+      background: rgba(236,72,153,0.92);
+      color: rgba(255,255,255,0.95);
+      box-shadow: 0 10px 24px rgba(236,72,153,0.18);
+    }
+
+.topbar {
+      display:flex; align-items:flex-end; justify-content:space-between; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .title { display:flex; flex-direction:column; gap: 6px; }
+    h1 { margin:0; font-size: 26px; letter-spacing: -0.02em; line-height: 1.1; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .badge {
+      display:inline-flex; gap: 8px; align-items:center;
+      padding: 6px 10px;
+      background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 999px;
+      color: rgba(255,255,255,0.85);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .controls { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+    label { font-size: 12px; color: var(--muted); }
+    select {
+      appearance: none;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 10px 36px 10px 12px;
+      font-size: 13px;
+      outline: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.22);
+    }
+    .selectWrap { position: relative; }
+    .selectWrap:after {
+      content: "▾";
+      position:absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.65);
+      pointer-events:none;
+      font-size: 14px;
+    }
+    .grid { display:grid; grid-template-columns: 1.4fr 1fr; gap: 14px; align-items: stretch; }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .cardHeader { display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; margin-bottom: 8px; }
+    .cardTitle { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.86); }
+    .hint { font-size: 12px; color: var(--muted2); }
+    .kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+    @media (max-width: 980px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+    .kpi { background: var(--card2); border: 1px solid var(--stroke); border-radius: 16px; padding: 14px 14px 12px; }
+    .kpi .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .kpi .value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .kpi .sub { font-size: 12px; color: var(--muted2); margin-top: 6px; }
+    .table { width:100%; border-collapse: collapse; overflow:hidden; border-radius: 14px; margin-top: 10px; }
+    .table th, .table td { padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; text-align: left; }
+    .table th { color: rgba(255,255,255,0.78); font-weight: 600; background: rgba(255,255,255,0.05); }
+    .table td { color: rgba(255,255,255,0.82); }
+    .pill {
+      display:inline-flex; align-items:center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(168,85,247,0.30);
+      background: rgba(168,85,247,0.10);
+      color: rgba(255,255,255,0.82);
+      font-size: 12px;
+      line-height: 18px;
+      white-space: nowrap;
+    }
+    .footer { margin-top: 14px; color: rgba(255,255,255,0.45); font-size: 12px; }
+
+    /* Tab pages */
+    .page { display: none; }
+    .page.active { display: block; }
+    .blankCard {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .blankTitle {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 6px 0;
+    }
+    .blankText {
+      margin: 0;
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Ribbon (navigation) -->
+    <div class="ribbon" role="navigation" aria-label="Dashboard tabs">
+      <div class="ribbonLeft">
+        <div class="ribbonBrand">Marvel LLC <span style="opacity:.55">•</span> Value Realization Dashboard</div>
+      </div>
+      <div class="tabs">
+        <button class="tabBtn active" data-tab="rampup">Ramp up Progress</button>
+        <button class="tabBtn" data-tab="financials">Financials</button>
+        <button class="tabBtn" data-tab="hr">HR &amp; Talent Metrics</button>
+        <button class="tabBtn" data-tab="governance">Program Governance</button>
+      </div>
+    </div>
+
+    <!-- Page 1: Ramp up Progress (UNCHANGED content except title text above) -->
+    <section id="page-rampup" class="page active" aria-label="Ramp up Progress">
+      <div class="topbar">
+        <div class="title">
+          <div class="badge">Marvel LLC <span style="opacity:.55">•</span> Value Realization dashboard</div>
+          <h1>Headcount ramp-up</h1>
+          <div class="subtitle">Planned demand is constant; hired (onboarded) updates with your filter.</div>
+        </div>
+
+        <div class="controls" id="rampupControls">
+          <div>
+            <label for="ieFilter">Candidate type</label><br/>
+            <div class="selectWrap">
+              <select id="ieFilter">
+                <option value="All" selected>All (Internal + External)</option>
+                <option value="Internal">Internal only</option>
+                <option value="External">External only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <div class="cardTitle">Overall ramp-up (Hired vs Planned)</div>
+              <div class="hint">Hired = non-blank Date Onboarded (Raw Data Final)</div>
+            </div>
+            <div class="pill" id="filterPill">All</div>
+          </div>
+          <div id="gauge" style="height: 420px;"></div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="label">Planned headcount</div>
+              <div class="value" id="kpiPlanned">—</div>
+              <div class="sub">From Planned Demand</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Hired (onboarded)</div>
+              <div class="value" id="kpiHired">—</div>
+              <div class="sub">Filtered by candidate type</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Remaining</div>
+              <div class="value" id="kpiRemaining">—</div>
+              <div class="sub">Planned − hired</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Ramp-up</div>
+              <div class="value" id="kpiPct">—</div>
+              <div class="sub">% of planned</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <div class="cardTitle">Planned vs hired by stream</div>
+              <div class="hint">Planned stays the same; hired changes with filter.</div>
+            </div>
+            <div class="pill" id="streamCountPill">Streams: —</div>
+          </div>
+
+          <div id="bar" style="height: 320px;"></div>
+
+          <table class="table" id="streamTable">
+            <thead>
+              <tr>
+                <th>Stream</th>
+                <th>Planned</th>
+                <th>Hired</th>
+                <th>Remaining</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="footer">You can add more filters (Team, Role, Month) using the same pattern.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page 2: Financials (blank) -->
+    <section id="page-financials" class="page" aria-label="Financials">
+      <div class="topbar">
+        <div class="title">
+          <div class="badge">Marvel LLC <span style="opacity:.55">•</span> Value Realization dashboard</div>
+          <h1>Financials</h1>
+          <div class="subtitle">Blank page (placeholder) — add charts/KPIs here.</div>
+        </div>
+      </div>
+      <div class="blankCard">
+        <h2 class="blankTitle">Financials</h2>
+        <p class="blankText">This tab is intentionally blank for now. Add financial KPIs, burn rate, forecast vs actuals, and benefits tracking here.</p>
+      </div>
+    </section>
+
+    <!-- Page 3: HR & Talent Metrics (blank) -->
+    <section id="page-hr" class="page" aria-label="HR & Talent Metrics">
+      <div class="topbar">
+        <div class="title">
+          <div class="badge">Marvel LLC <span style="opacity:.55">•</span> Value Realization dashboard</div>
+          <h1>HR &amp; Talent Metrics</h1>
+          <div class="subtitle">Blank page (placeholder) — add charts/KPIs here.</div>
+        </div>
+      </div>
+      <div class="blankCard">
+        <h2 class="blankTitle">HR &amp; Talent Metrics</h2>
+        <p class="blankText">This tab is intentionally blank for now. Add attrition, hiring funnel, time-to-onboard, skills coverage, and training completion here.</p>
+      </div>
+    </section>
+
+    <!-- Page 4: Program Governance (blank) -->
+    <section id="page-governance" class="page" aria-label="Program Governance">
+      <div class="topbar">
+        <div class="title">
+          <div class="badge">Marvel LLC <span style="opacity:.55">•</span> Value Realization dashboard</div>
+          <h1>Program Governance</h1>
+          <div class="subtitle">Blank page (placeholder) — add charts/KPIs here.</div>
+        </div>
+      </div>
+      <div class="blankCard">
+        <h2 class="blankTitle">Program Governance</h2>
+        <p class="blankText">This tab is intentionally blank for now. Add milestones, RAID log summaries, decision tracking, and overall program health here.</p>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+  // ---- Data (ramp up) ----
+  const PLANNED_TOTAL = 261;
+  const PLANNED_BY_STREAM = {"ENGG": 42, "ITES": 125, "RND": 58, "SAM": 36};
+  const RECORDS = [{"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-11-14"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-10-28"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-12-08"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-11-11"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-16"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-25"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-31"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-09-13"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-30"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-12-18"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-12-25"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-12-16"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-11-06"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-10"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-03"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-05"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-01-22"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-17"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-13"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-01-03"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-02-22"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-10-11"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-19"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-01-07"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-11-20"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-11-23"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-23"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "External", "onboarded": "2026-01-28"}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-12-19"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-10-09"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-15"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-10-03"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-08"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-11-07"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "External", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-12-06"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-26"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-21"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-10"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-10-22"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-11-13"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-31"}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-01-27"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-10-29"}, {"stream": "ITES", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-01-03"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-02-11"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-09-17"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-26"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-10-30"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-11-12"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-12-26"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-16"}, {"stream": "SAM", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "External", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-12"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-09"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-01-15"}, {"stream": "RND", "ie": "External", "onboarded": "2026-01-18"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-06"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-02-27"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-11"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-01-17"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-01-30"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-01-26"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "External", "onboarded": "2026-01-01"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-10-15"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-02-10"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-18"}, {"stream": "ENGG", "ie": "External", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-10-23"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-10-25"}, {"stream": "ITES", "ie": "External", "onboarded": "2025-11-02"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-25"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-12-26"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-10-31"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-22"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-10-11"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-11-30"}, {"stream": "SAM", "ie": "External", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-11"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-14"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-29"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-12-30"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-01-09"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-09-04"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-01-10"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-02-03"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-10-27"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-09-29"}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-10-31"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-09-27"}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-11-10"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2026-01-02"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-11-24"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-25"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-11-28"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-11-03"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-10"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-01-28"}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-10-27"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-11-18"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-12-01"}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-12-23"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-01-26"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-10-13"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "External", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2026-01-01"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-12-17"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-08-31"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "External", "onboarded": "2026-01-06"}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-12-11"}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2025-11-20"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-01-27"}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-02-02"}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-10-21"}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": "2025-09-05"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2025-10-08"}, {"stream": "ENGG", "ie": "Internal", "onboarded": "2026-01-23"}, {"stream": "ENGG", "ie": "External", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": null}, {"stream": "RND", "ie": "Internal", "onboarded": "2026-02-09"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": null}, {"stream": "ITES", "ie": "Internal", "onboarded": null}, {"stream": "ENGG", "ie": "Internal", "onboarded": null}, {"stream": "SAM", "ie": "Internal", "onboarded": "2025-11-24"}, {"stream": "ITES", "ie": "Internal", "onboarded": null}];
+
+  function fmtInt(x) {
+    const n = Math.max(0, Math.floor(Number(x) || 0));
+    return n.toLocaleString();
+  }
+
+  function compute(filterIE) {
+    const isAll = (filterIE === "All");
+    const hired = RECORDS.filter(r => r.onboarded && (isAll || r.ie === filterIE));
+    const hiredCount = hired.length;
+
+    const hiredByStream = {};
+    for (const r of hired) {
+      const s = (r.stream || "").trim() || "(Blank)";
+      hiredByStream[s] = (hiredByStream[s] || 0) + 1;
+    }
+
+    const streamSet = new Set([
+      ...Object.keys(PLANNED_BY_STREAM),
+      ...Object.keys(hiredByStream)
+    ]);
+
+    const rows = [];
+    for (const s of streamSet) {
+      const planned = Number(PLANNED_BY_STREAM[s] || 0);
+      const hiredS = Number(hiredByStream[s] || 0);
+      rows.push({
+        stream: s,
+        planned,
+        hired: hiredS,
+        remaining: Math.max(0, planned - hiredS)
+      });
+    }
+
+    rows.sort((a,b) => (b.planned - a.planned) || a.stream.localeCompare(b.stream));
+
+    return {
+      plannedTotal: PLANNED_TOTAL,
+      hiredCount,
+      remainingTotal: Math.max(0, PLANNED_TOTAL - hiredCount),
+      pct: PLANNED_TOTAL > 0 ? (hiredCount / PLANNED_TOTAL) * 100 : 0,
+      rows
+    };
+  }
+
+  function gaugeSteps(plannedTotal) {
+    const steps = [];
+    const bands = 6;
+    for (let i=0; i<bands; i++) {
+      const a = (i / bands) * plannedTotal;
+      const b = ((i+1) / bands) * plannedTotal;
+      const alpha = 0.10 + i*0.06;
+      steps.push({
+        range: [a,b],
+        color: `rgba(168,85,247,${alpha})`
+      });
+    }
+    return steps;
+  }
+
+  function renderRampUp(state, filterIE) {
+    document.getElementById("kpiPlanned").textContent = fmtInt(state.plannedTotal);
+    document.getElementById("kpiHired").textContent = fmtInt(state.hiredCount);
+    document.getElementById("kpiRemaining").textContent = fmtInt(state.remainingTotal);
+    document.getElementById("kpiPct").textContent = `${state.pct.toFixed(0)}%`;
+
+    document.getElementById("filterPill").textContent = (filterIE === "All") ? "All" : filterIE;
+    document.getElementById("streamCountPill").textContent = `Streams: ${state.rows.length}`;
+
+    const gaugeData = [{
+      type: "indicator",
+      mode: "gauge+number",
+      value: state.hiredCount,
+      number: {
+        valueformat: ",d",
+        font: { size: 48, color: "rgba(255,255,255,0.92)" }
+      },
+      title: {
+        text: `<span style="font-size:14px;color:rgba(255,255,255,0.70)">Hired / Planned</span><br><span style="font-size:20px;color:rgba(255,255,255,0.90)">${fmtInt(state.hiredCount)} / ${fmtInt(state.plannedTotal)}</span>`,
+        font: { color: "rgba(255,255,255,0.86)" }
+      },
+      gauge: {
+        axis: {
+          range: [0, state.plannedTotal],
+          tickformat: ",d",
+          tickfont: { color: "rgba(255,255,255,0.55)" },
+          ticks: "outside"
+        },
+        bar: { color: "rgba(236,72,153,0.85)" },
+        bgcolor: "rgba(0,0,0,0)",
+        borderwidth: 0,
+        steps: gaugeSteps(state.plannedTotal),
+        threshold: {
+          line: { color: "rgba(34,197,94,0.95)", width: 4 },
+          thickness: 0.80,
+          value: state.plannedTotal
+        }
+      }
+    }];
+
+    const commonLayout = {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      font: { family: "Inter, sans-serif", color: "rgba(255,255,255,0.82)" }
+    };
+
+    Plotly.react("gauge", gaugeData, {
+      ...commonLayout,
+      margin: { l: 30, r: 30, t: 80, b: 10 },
+    }, {displayModeBar: false, responsive: true});
+
+    const top = state.rows.slice(0, 8);
+    const streams = top.map(r => r.stream);
+    const planned = top.map(r => r.planned);
+    const hired = top.map(r => r.hired);
+
+    const barData = [
+      {
+        type: "bar",
+        name: "Planned",
+        x: streams,
+        y: planned,
+        marker: { color: "rgba(168,85,247,0.55)" },
+        hovertemplate: "Planned: %{y:,d}<extra></extra>"
+      },
+      {
+        type: "bar",
+        name: "Hired",
+        x: streams,
+        y: hired,
+        marker: { color: "rgba(236,72,153,0.75)" },
+        hovertemplate: "Hired: %{y:,d}<extra></extra>"
+      }
+    ];
+
+    Plotly.react("bar", barData, {
+      ...commonLayout,
+      barmode: "group",
+      margin: { l: 38, r: 16, t: 10, b: 70 },
+      xaxis: {
+        tickangle: -25,
+        tickfont: { color: "rgba(255,255,255,0.60)" },
+        gridcolor: "rgba(255,255,255,0.06)"
+      },
+      yaxis: {
+        tickfont: { color: "rgba(255,255,255,0.60)" },
+        gridcolor: "rgba(255,255,255,0.08)"
+      },
+      legend: {
+        orientation: "h",
+        yanchor: "bottom",
+        y: 1.02,
+        xanchor: "left",
+        x: 0,
+        font: { color: "rgba(255,255,255,0.70)" }
+      }
+    }, {displayModeBar: false, responsive: true});
+
+    const tbody = document.querySelector("#streamTable tbody");
+    tbody.innerHTML = "";
+    for (const r of state.rows.slice(0, 12)) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.stream}</td>
+        <td>${fmtInt(r.planned)}</td>
+        <td>${fmtInt(r.hired)}</td>
+        <td>${fmtInt(r.remaining)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function initRampUp() {
+    const sel = document.getElementById("ieFilter");
+    const run = () => {
+      const filterIE = sel.value;
+      const state = compute(filterIE);
+      renderRampUp(state, filterIE);
+    };
+    sel.addEventListener("change", run);
+    run();
+  }
+
+  // ---- Tabs ----
+  function setActiveTab(tabKey) {
+    const pages = {
+      rampup: document.getElementById("page-rampup"),
+      financials: document.getElementById("page-financials"),
+      hr: document.getElementById("page-hr"),
+      governance: document.getElementById("page-governance")
+    };
+
+    Object.entries(pages).forEach(([k, el]) => {
+      if (!el) return;
+      el.classList.toggle("active", k === tabKey);
+    });
+
+    document.querySelectorAll(".tabBtn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === tabKey);
+    });
+
+    // Filters only visible on Ramp up Progress
+    const controls = document.getElementById("rampupControls");
+    if (controls) {
+      controls.style.display = (tabKey === "rampup") ? "flex" : "none";
+    }
+
+    // If returning to rampup, ensure plots resize correctly
+    if (tabKey === "rampup") {
+      setTimeout(() => {
+        try {
+          Plotly.Plots.resize("gauge");
+          Plotly.Plots.resize("bar");
+        } catch (e) {}
+      }, 60);
+    }
+  }
+
+  function initTabs() {
+    document.querySelectorAll(".tabBtn").forEach(btn => {
+      btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+    });
+  }
+
+  initTabs();
+  initRampUp();
+</script>
+</body>
+</html>
